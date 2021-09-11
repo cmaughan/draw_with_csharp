@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace WindowsFormsApp1
 {
 
     class GameOfLife
     {
-        private int[,] cellsB; // Source and dest life data
-        private int[,] cellsA;
+        private int[] cells;
         private int currentSource = 0;
         private Random rand = new Random();
         private int currentWidth = 0;
@@ -35,29 +35,26 @@ namespace WindowsFormsApp1
             height = height / Scale;
             if (currentWidth != width || currentHeight != height)
             {
-                cellsA = new int[width, height];
-                cellsB = new int[width, height];
-
-                rand = new Random(0);
-                for (int x = 0; x < width; x++)
-                {
-                    for (int y = 0; y < height; y++)
-                    {
-                        cellsA[x, y] = (rand.Next(0, 20) <= 1) ? Alive : Dead;
-                    }
-                }
-
-                for (int x = 0; x < width; x++)
-                {
-                    for (int y = 0; y < height; y++)
-                    {
-                        cellsB[x, y] = Dead;
-                    }
-                }
-
+                currentSource = 0;
                 currentWidth = width;
                 currentHeight = height;
-                currentSource = 0;
+                cells = new int[width * height * 2];
+
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        int value;
+                        using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+                        {
+                            byte[] randomNumber = new byte[4];//4 for int32
+                            rng.GetBytes(randomNumber);
+                            value = BitConverter.ToInt32(randomNumber, 0);
+                        }
+                        SetCell(GetCurrentSource(), x, y, (value % 6) <=1 ? Alive : Dead);
+                    }
+                }
+
             }
 
         }
@@ -69,7 +66,7 @@ namespace WindowsFormsApp1
                 for (int y = 0; y < currentHeight; y++)
                 {
                     int currentState = GetCell(GetCurrentSource(), x, y);
-                    
+
                     int aliveCount = 0;
                     for (int xx = -1; xx <= 1; xx++)
                     {
@@ -150,25 +147,12 @@ namespace WindowsFormsApp1
         public int GetCell(int source, int x, int y)
         {
             Clamp(ref x, ref y);
-            
-            if (source == 0)
-            {
-                return cellsA[x, y];
-            }
-            return cellsB[x, y];
+            return cells[(source * (currentWidth * currentHeight)) + (y * currentWidth) + x];
         }
         public void SetCell(int source, int x, int y, int aliveOrDead)
         {
             Clamp(ref x, ref y);
-
-            if (source == 0)
-            {
-                cellsA[x, y] = aliveOrDead;
-            }
-            else
-            {
-                cellsB[x, y] = aliveOrDead;
-            }
+            cells[(source * (currentWidth * currentHeight)) + (y * currentWidth) + x] = aliveOrDead;
         }
 
         public int GetCurrentSource()
@@ -179,7 +163,6 @@ namespace WindowsFormsApp1
         {
             return 1 - currentSource;
         }
-
 
     }
 }

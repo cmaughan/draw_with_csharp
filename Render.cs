@@ -5,50 +5,67 @@ namespace WindowsFormsApp1
 {
     public class Render
     {
-        private GameOfLife life = new GameOfLife();
+        //private GameOfLife life = new GameOfLife();
+        private Maze maze = new Maze();
+
+        public Render()
+        {
+            maze.Init();
+        }
 
         public void DrawForeground(Graphics g)
         {
-            //g.FillEllipse(new SolidBrush(Color.Red), new RectangleF(10, 10, 100, 100));
-            //g.FillRectangle(new SolidBrush(Color.Green), new RectangleF(150, 150, 50, 50));
+            const int margin = 2;
+            int screenWidth = (int)(g.VisibleClipBounds.Width) - margin * 2;
+            int screenHeight = (int)(g.VisibleClipBounds.Height) - margin * 2;
+
+            int width = maze.GetWidth();
+            int height = maze.GetHeight();
+
+            int pixelsPerCellX = (int)(screenWidth) / width;
+            int pixelsPerCellY = (int)(screenHeight) / height;
+
+            if (pixelsPerCellX < pixelsPerCellY)
+            {
+                pixelsPerCellY = pixelsPerCellX;
+            }
+            else
+            {
+                pixelsPerCellX = pixelsPerCellY;
+            }
+
+            Pen p = new Pen(Brushes.White);
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int xx = x * pixelsPerCellX + margin;
+                    int yy = y * pixelsPerCellY + margin;
+
+                    var cell = maze.GetCell(x, y);
+
+                    if (cell.borders[Cell.North] == Cell.Border.Wall)
+                    {
+                        g.DrawLine(p, xx, yy, xx + pixelsPerCellX, yy);
+                    }
+                    if (cell.borders[Cell.West] == Cell.Border.Wall)
+                    {
+                        g.DrawLine(p, xx, yy, xx, yy + pixelsPerCellY);
+                    }
+                    if (cell.borders[Cell.East] == Cell.Border.Wall)
+                    {
+                        g.DrawLine(p, xx + pixelsPerCellX, yy, xx + pixelsPerCellX, yy + pixelsPerCellY);
+                    }
+                    if (cell.borders[Cell.South] == Cell.Border.Wall)
+                    {
+                        g.DrawLine(p, xx, yy + pixelsPerCellY, xx + pixelsPerCellX, yy + pixelsPerCellY);
+                    }
+                }
+            }
         }
 
         public unsafe void DrawBackground(Graphics g, Bitmap bmp)
         {
-            // Draw to the bitmap
-            Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            var lockData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.WriteOnly, bmp.PixelFormat);
-
-            life.InitCells(bmp.Width, bmp.Height);
-
-            life.Update();
-
-            int scale = life.GetScale();
-
-            var ptr = (byte*)lockData.Scan0.ToPointer();
-            for (int y = 0; y < bmp.Height; y++)
-            {
-                for (int x = 0; x < bmp.Width; x++)
-                {
-                    var pData = (UInt32*)(ptr + (y * lockData.Stride) + (x * 4));
-                    int val = life.GetCell(life.GetCurrentDest(), x / scale, y / scale); 
-
-                    if (val == 0)
-                    {
-                        *pData = 0xFF000000;
-                    }
-                    else if (val ==1 )
-                    {
-                        *pData = 0xFFFFFFFF;
-                    }
-                    else if (val ==2 )
-                    {
-                        *pData = 0xFFFF0000;
-                    }
-                }
-            }
-
-            bmp.UnlockBits(lockData);
         }
     }
 }

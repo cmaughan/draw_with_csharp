@@ -33,7 +33,7 @@ namespace WindowsFormsApp1
         public void StartDrawing()
         {
             timer = new System.Windows.Forms.Timer();
-            timer.Interval = 16;
+            timer.Interval = 1;
             timer.Tick += Redraw;
             timer.Enabled = true;
         }
